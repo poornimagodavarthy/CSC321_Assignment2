@@ -32,7 +32,7 @@ def CBC_encrypt(file_path, key, initialization_vector):
     with open(file_path, 'r') as file:
         cipher = AES.new(key, AES.MODE_ECB)
         chunk = file.read(block_size).encode()
-        curr_chunk = bytes([initialization_vector ^ chunk])
+        curr_chunk = bytes([b1 ^ b2 for b1, b2 in zip(initialization_vector, chunk)])
         ciphertext += cipher.encrypt(curr_chunk)
         while True:
             chunk  = file.read(block_size).encode()
@@ -40,7 +40,7 @@ def CBC_encrypt(file_path, key, initialization_vector):
                 break
             if len(chunk) < block_size:
                 chunk = pad(chunk, block_size, style='pkcs7')
-            #curr_chunk = curr_chunk ^ chunk
+            curr_chunk = bytes([b1 ^ b2 for b1, b2 in zip(curr_chunk, chunk)])
             encrypted_chunk = cipher.encrypt(curr_chunk)
             ciphertext += encrypted_chunk
     return ciphertext
