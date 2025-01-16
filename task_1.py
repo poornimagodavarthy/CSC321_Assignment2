@@ -1,9 +1,6 @@
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.Util.Padding import pad
-
-plaintext = 'hello this is random text'
-
+from Crypto.Util.Padding import pad, unpad
 
 def ECB_encrypt(file_path, key):
     block_size = AES.block_size
@@ -20,12 +17,6 @@ def ECB_encrypt(file_path, key):
             ciphertext += encrypted_chunk
     return ciphertext
 
-#pkcs #7 padding, fill with 4444
-def decrypt(ciphertext, key):
-    pass
-
-# XOR with initialization vector
-#XOR prev blocks
 def CBC_encrypt(file_path, key, initialization_vector):
     block_size = AES.block_size
     ciphertext = b""
@@ -54,12 +45,23 @@ def main():
     file_path = './test'
 
     #ECB
-    ciphertext = ECB_encrypt(file_path, key)
-    print(ciphertext)
+    #encryption
+    ecb_ciphertext = ECB_encrypt(file_path, key)
+    print(ecb_ciphertext)
+
+    #decryption
+    cipher_ecb = AES.new(key, AES.MODE_ECB)
+    decrypted_ecb = unpad(cipher_ecb.decrypt(ecb_ciphertext), AES.block_size, style='pkcs7')
+    print(decrypted_ecb)
 
     #CBC
+    #encryption
     intilization_vector = get_random_bytes(16)
-    encrypted = CBC_encrypt(file_path, key, intilization_vector)
-    print(encrypted)
+    cbc_ciphertext = CBC_encrypt(file_path, key, intilization_vector)
+    print(cbc_ciphertext)
 
+    #decryption
+    cipher_cbc = AES.new(key, AES.MODE_CBC)
+    decrypted_cbc = unpad(cipher_cbc.decrypt(cbc_ciphertext), AES.block_size, style='pkcs7')
+    print(decrypted_cbc)
 main()
