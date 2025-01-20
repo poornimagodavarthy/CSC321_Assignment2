@@ -22,30 +22,18 @@ def ECB_encrypt(file_path, key, output_path):
     
     with open(output_path, 'wb') as output_file:
         output_file.write(ciphertext)
-    #return ciphertext
 
-def CBC_encrypt(file_path, key, initialization_vector):
+def CBC_encrypt(file_path, key, initialization_vector, output_path):
     block_size = AES.block_size
     ciphertext = b""
+    cipher = AES.new(key, AES.MODE_ECB)
 
     with open(file_path, 'rb') as file:
         if ".bmp" in file_path:
             header_size = 54
             header = file.read(header_size)
             ciphertext+=header
-
-        #cipher = AES.new(key, AES.MODE_CBC)
-        cipher = AES.new(key, AES.MODE_ECB)
-
-        chunk = file.read(block_size)
-        if not chunk:
-            return ciphertext
-        if len(chunk) < block_size:
-            chunk = pad(chunk, block_size, style='pkcs7')
-        curr_chunk = bytes([b1 ^ b2 for b1, b2 in zip(chunk, initialization_vector)])
-        encrypted_chunk = cipher.encrypt(curr_chunk)
-        ciphertext += encrypted_chunk
-        prev_encrypted = encrypted_chunk
+        prev_encrypted = initialization_vector
         while True:
             chunk  = file.read(block_size)
             if not chunk:
@@ -56,7 +44,8 @@ def CBC_encrypt(file_path, key, initialization_vector):
             encrypted_chunk = cipher.encrypt(curr_chunk)
             ciphertext += encrypted_chunk
             prev_encrypted = encrypted_chunk
-    return ciphertext
+    with open(output_path, 'wb') as output_file:
+        output_file.write(ciphertext)
 
 def ECB_decrypt(cipherfile, cipher_ecb, output_path):
     plaintext = b""
@@ -69,10 +58,16 @@ def ECB_decrypt(cipherfile, cipher_ecb, output_path):
         bmp_file.write(header)
         bmp_file.write(plaintext)
         
-def submit():
-    pass
-def verify():
-    pass
+def CBC_decrypt(cipherfile, cipher_cbc, output_path):
+    plaintext = b""
+    header_size= 54
+    with open(cipherfile, "rb") as ciphertext:
+        header = ciphertext.read(header_size)
+        pixel_data = ciphertext.read()
+    plaintext+= unpad(cipher_cbc.decrypt(pixel_data), AES.block_size, style="pkcs7")
+    with open(output_path, 'wb') as bmp_file:
+        bmp_file.write(header)
+        bmp_file.write(plaintext)
 
 def main():
     key = get_random_bytes(16)
@@ -88,15 +83,16 @@ def main():
 
     #CBC
     #encryption
+    test = '/Users/poorn1/Desktop/Security_Assignment/test'
+    cbc_encrypted = './cbc_encrypted'
+    cbc_output = './cbc_output.bmp'
     initialization_vector = get_random_bytes(16)
     key2 = get_random_bytes(16)
-    cbc_ciphertext = CBC_encrypt(file_path2, key2, initialization_vector)
-    #print(cbc_ciphertext)
+    CBC_encrypt(file_path2, key2, initialization_vector, cbc_encrypted)
+
 
     #decryption
     cipher_cbc = AES.new(key2, AES.MODE_CBC, iv=initialization_vector)
-    #decrypted_cbc = unpad(cipher_cbc.decrypt(cbc_ciphertext), AES.block_size, style='pkcs7')
-
-    #decrypted_cbc = unpad(cipher_cbc.decrypt(cbc_ciphertext), AES.block_size, style='pkcs7')
-    #print(decrypted_cbc)
+    CBC_decrypt(cbc_encrypted, cipher_cbc, cbc_output)
+  
 main()
